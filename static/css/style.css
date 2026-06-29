@@ -1386,3 +1386,68 @@ input:checked + .slider .moon-icon {
     opacity: 0.08;
 }
 
+/* UX Improvements Additions */
+.last-updated-text {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+[data-theme="light"] .last-updated-text {
+    color: #4b5563;
+}
+
+.suggested-searches {
+    margin-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.suggested-searches > span {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+}
+
+.suggested-pills {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.suggested-pill {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 0.35rem 0.75rem;
+    border-radius: 15px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.suggested-pill:hover {
+    background: rgba(99, 102, 241, 0.08);
+    border-color: var(--primary);
+    color: white;
+}
+
+[data-theme="light"] .suggested-pill {
+    background: rgba(0, 0, 0, 0.02);
+    border-color: rgba(0, 0, 0, 0.06);
+    color: #374151;
+}
+
+[data-theme="light"] .suggested-pill:hover {
+    background: rgba(79, 70, 229, 0.06);
+    border-color: var(--primary);
+    color: #111827;
+}
+
+

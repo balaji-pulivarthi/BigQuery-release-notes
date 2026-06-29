@@ -168,6 +168,14 @@ async function fetchReleaseNotes(forceRefresh = false) {
         renderFeed();
         updateStats();
 
+        // Update Last Updated Time Label
+        const lastUpdatedTime = document.getElementById('last-updated-time');
+        if (lastUpdatedTime && res.last_fetched) {
+            const date = new Date(res.last_fetched * 1000);
+            const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            lastUpdatedTime.textContent = `Last updated: ${timeStr}`;
+        }
+
     } catch (err) {
         console.error('Error fetching release notes:', err);
         showError(err.message || 'Network error occurred while fetching release notes.');
@@ -485,21 +493,25 @@ function updateCharCounter() {
     charCounter.textContent = remaining;
 
     // Styling updates based on limit
+    const shortenTweetBtn = document.getElementById('shorten-tweet-btn');
     if (remaining < 0) {
         charCounter.className = 'char-counter danger';
         postTweetBtn.disabled = true;
         postTweetBtn.style.opacity = 0.5;
         postTweetBtn.style.cursor = 'not-allowed';
+        if (shortenTweetBtn) shortenTweetBtn.style.display = 'inline-flex';
     } else if (remaining <= 20) {
         charCounter.className = 'char-counter warning';
         postTweetBtn.disabled = false;
         postTweetBtn.style.opacity = 1;
         postTweetBtn.style.cursor = 'pointer';
+        if (shortenTweetBtn) shortenTweetBtn.style.display = 'none';
     } else {
         charCounter.className = 'char-counter';
         postTweetBtn.disabled = false;
         postTweetBtn.style.opacity = 1;
         postTweetBtn.style.cursor = 'pointer';
+        if (shortenTweetBtn) shortenTweetBtn.style.display = 'none';
     }
 
     // Update SVG Progress Circle
@@ -655,6 +667,94 @@ function setupEventListeners() {
                 showToast('Dark mode enabled', 'info');
             }
         });
+    }
+
+    // 13. Shorten Tweet Button Click
+    const shortenTweetBtn = document.getElementById('shorten-tweet-btn');
+    if (shortenTweetBtn) {
+        shortenTweetBtn.addEventListener('click', shortenTweetToFit);
+    }
+
+    // 14. Suggested Searches Click (inside Empty State)
+    const suggestedPills = document.querySelector('.suggested-pills');
+    if (suggestedPills) {
+        suggestedPills.addEventListener('click', (e) => {
+            const pill = e.target.closest('.suggested-pill');
+            if (!pill) return;
+            const query = pill.getAttribute('data-query');
+            searchInput.value = query;
+            state.filters.search = query;
+            clearSearchBtn.style.display = 'flex';
+            renderFeed();
+        });
+    }
+
+    // 15. Global Keyboard Shortcuts
+    document.addEventListener('keydown', (e) => {
+        // Focus search on '/'
+        if (e.key === '/' && document.activeElement !== searchInput && document.activeElement !== tweetTextarea) {
+            e.preventDefault();
+            searchInput.focus();
+            searchInput.select();
+        }
+        // Escape to close modal
+        if (e.key === 'Escape' && tweetModal.style.display === 'flex') {
+            closeTweetModal();
+        }
+    });
+}
+
+// Automatically shorten active tweet description to fit Twitter's character budget
+function shortenTweetToFit() {
+    const release = state.activeTweetRelease;
+    if (!release) return;
+
+    // Get active hashtags
+    const activeHashtags = [];
+    document.querySelectorAll('.hashtag-pill.active').forEach(pill => {
+        activeHashtags.push(pill.getAttribute('data-tag'));
+    });
+    const tagsString = activeHashtags.join(' ');
+
+    // Static parts of text layout
+    const part1 = `BigQuery Release Update [${release.date}] 🚀\n• ${release.type}: `;
+    const part2 = `...\n\n${tagsString ? tagsString + '\n' : ''}Read more: ${release.link}`;
+
+    // Compute Twitter-shortened lengths (where URLs are 23 chars)
+    const calculateTwitterLength = (text) => {
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        let len = text.length;
+        const urls = text.match(urlRegex);
+        if (urls) {
+            urls.forEach(url => {
+                len = len - url.length + 23;
+            });
+        }
+        return len;
+    };
+
+    const staticLen = calculateTwitterLength(part1) + calculateTwitterLength(part2);
+    const availableForSnippet = 280 - staticLen;
+
+    if (availableForSnippet > 0) {
+        let snippet = release.content_text.substring(0, availableForSnippet).trim();
+        // Avoid cutting a word in half if possible
+        const lastSpace = snippet.lastIndexOf(' ');
+        if (lastSpace > availableForSnippet - 20 && lastSpace > 0) {
+            snippet = snippet.substring(0, lastSpace);
+        }
+        
+        let draft = `${part1}${snippet}...\n\n`;
+        if (tagsString) {
+            draft += `${tagsString}\n`;
+        }
+        draft += `Read more: ${release.link}`;
+        
+        tweetTextarea.value = draft;
+        updateCharCounter();
+        showToast('Description shortened to fit limit!', 'success');
+    } else {
+        showToast('Not enough characters to fit description. Try removing hashtags.', 'error');
     }
 }
 

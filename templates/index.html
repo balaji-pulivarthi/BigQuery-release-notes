@@ -32,7 +32,8 @@
                 </div>
             </div>
             
-            <div class="header-actions" style="display: flex; gap: 1rem; align-items: center;">
+            <div class="header-actions" style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                <span id="last-updated-time" class="last-updated-text">Updating...</span>
                 <div class="theme-switch-wrapper" title="Toggle Light/Dark Theme">
                     <label class="theme-switch" for="theme-checkbox">
                         <input type="checkbox" id="theme-checkbox">
@@ -125,6 +126,17 @@
                 <div class="state-icon-wrapper"><i data-lucide="search-code"></i></div>
                 <h2>No matches found</h2>
                 <p>Try adjusting your keywords or filters to search for other release notes.</p>
+                
+                <div class="suggested-searches">
+                    <span>Try searching for:</span>
+                    <div class="suggested-pills">
+                        <button class="suggested-pill" data-query="vector">Vector Search</button>
+                        <button class="suggested-pill" data-query="gemini">Gemini</button>
+                        <button class="suggested-pill" data-query="odbc">ODBC Driver</button>
+                        <button class="suggested-pill" data-query="agent">AI Agent</button>
+                    </div>
+                </div>
+                
                 <button id="reset-filters-btn" class="btn btn-secondary mt-4">Reset Filters</button>
             </div>
 
@@ -191,6 +203,10 @@
             </div>
 
             <div class="modal-footer">
+                <button id="shorten-tweet-btn" class="btn btn-secondary" style="display: none;" title="Automatically shorten description to fit 280 character limit">
+                    <i data-lucide="scissors"></i>
+                    <span>Shorten Draft</span>
+                </button>
                 <button id="copy-tweet-btn" class="btn btn-secondary">
                     <i data-lucide="copy"></i>
                     <span>Copy Text</span>
