@@ -60,12 +60,31 @@ document.addEventListener('DOMContentLoaded', () => {
     // 2. Load tweeted IDs from LocalStorage
     loadTweetedState();
 
+    // 2.5. Initialize Theme
+    initTheme();
+
     // 3. Fetch Release Notes
     fetchReleaseNotes(false);
 
     // 4. Setup Event Listeners
     setupEventListeners();
 });
+
+// Initialize color theme (dark/light) from localStorage
+function initTheme() {
+    const themeCheckbox = document.getElementById('theme-checkbox');
+    if (!themeCheckbox) return;
+    
+    const savedTheme = localStorage.getItem('bq_theme') || 'dark';
+    
+    if (savedTheme === 'light') {
+        themeCheckbox.checked = true;
+        document.documentElement.setAttribute('data-theme', 'light');
+    } else {
+        themeCheckbox.checked = false;
+        document.documentElement.setAttribute('data-theme', 'dark');
+    }
+}
 
 // Load Tweeted State from LocalStorage
 function loadTweetedState() {
@@ -619,6 +638,22 @@ function setupEventListeners() {
     if (exportCsvBtn) {
         exportCsvBtn.addEventListener('click', () => {
             exportToCSV();
+        });
+    }
+
+    // 12. Theme Switch Toggle
+    const themeCheckbox = document.getElementById('theme-checkbox');
+    if (themeCheckbox) {
+        themeCheckbox.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                document.documentElement.setAttribute('data-theme', 'light');
+                localStorage.setItem('bq_theme', 'light');
+                showToast('Light mode enabled', 'info');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                localStorage.setItem('bq_theme', 'dark');
+                showToast('Dark mode enabled', 'info');
+            }
         });
     }
 }

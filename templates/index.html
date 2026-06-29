@@ -32,7 +32,16 @@
                 </div>
             </div>
             
-            <div class="header-actions" style="display: flex; gap: 0.75rem;">
+            <div class="header-actions" style="display: flex; gap: 1rem; align-items: center;">
+                <div class="theme-switch-wrapper" title="Toggle Light/Dark Theme">
+                    <label class="theme-switch" for="theme-checkbox">
+                        <input type="checkbox" id="theme-checkbox">
+                        <div class="slider">
+                            <i data-lucide="sun" class="sun-icon" style="width:12px;height:12px;"></i>
+                            <i data-lucide="moon" class="moon-icon" style="width:12px;height:12px;"></i>
+                        </div>
+                    </label>
+                </div>
                 <button id="export-csv-btn" class="btn btn-secondary" title="Export current view to CSV">
                     <i data-lucide="download"></i>
                     <span>Export CSV</span>
