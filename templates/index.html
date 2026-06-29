@@ -32,7 +32,11 @@
                 </div>
             </div>
             
-            <div class="header-actions">
+            <div class="header-actions" style="display: flex; gap: 0.75rem;">
+                <button id="export-csv-btn" class="btn btn-secondary" title="Export current view to CSV">
+                    <i data-lucide="download"></i>
+                    <span>Export CSV</span>
+                </button>
                 <button id="refresh-btn" class="btn btn-primary btn-glow" title="Fetch latest release notes">
                     <i data-lucide="refresh-cw" class="icon-spin-target"></i>
                     <span>Refresh Feed</span>

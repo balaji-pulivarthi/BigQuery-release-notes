@@ -192,12 +192,9 @@ function updateStats() {
     statShared.textContent = state.tweetedIds.size || '0';
 }
 
-// Render the updates list
-function renderFeed() {
-    updatesFeed.innerHTML = '';
-    
-    // Filter logic
-    const filtered = state.releases.filter(item => {
+// Get currently filtered releases based on active filters
+function getFilteredReleases() {
+    return state.releases.filter(item => {
         // Filter by Type
         if (state.filters.type !== 'all') {
             if (item.type.toLowerCase() !== state.filters.type.toLowerCase()) {
@@ -216,6 +213,13 @@ function renderFeed() {
 
         return true;
     });
+}
+
+// Render the updates list
+function renderFeed() {
+    updatesFeed.innerHTML = '';
+    
+    const filtered = getFilteredReleases();
 
     // Check if empty
     if (filtered.length === 0) {
@@ -278,7 +282,10 @@ function renderFeed() {
                         <span>Mark as Tweeted</span>
                     </label>
                 </div>
-                <div class="footer-right">
+                <div class="footer-right" style="display: flex; gap: 0.4rem;">
+                    <button class="btn btn-secondary btn-sm copy-card-btn" style="padding:0.5rem 0.8rem; font-size:0.75rem;" title="Copy update content to clipboard">
+                        <i data-lucide="copy" style="width:14px;height:14px;"></i> Copy
+                    </button>
                     <a href="${item.link}" target="_blank" class="btn btn-secondary btn-sm" style="padding:0.5rem 0.8rem; font-size:0.75rem;">
                         <i data-lucide="external-link" style="width:14px;height:14px;"></i> Source
                     </a>
@@ -328,6 +335,24 @@ function attachFeedEventListeners() {
                 card.classList.remove('is-tweeted');
             }
             saveTweetedState();
+        });
+    });
+
+    // 3. Copy card buttons
+    updatesFeed.querySelectorAll('.copy-card-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const card = e.target.closest('.card');
+            const id = card.getAttribute('data-id');
+            const release = state.releases.find(r => r.id === id);
+            if (release) {
+                const textToCopy = `BigQuery Release Update [${release.date}] - ${release.type}:\n\n${release.content_text}\n\nRead more: ${release.link}`;
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    showToast('Update copied to clipboard!', 'success');
+                }).catch(err => {
+                    console.error('Failed to copy card text:', err);
+                    showToast('Failed to copy. Copy manually.', 'error');
+                });
+            }
         });
     });
 }
@@ -588,4 +613,69 @@ function setupEventListeners() {
         
         closeTweetModal();
     });
+
+    // 11. Export CSV Button Click
+    const exportCsvBtn = document.getElementById('export-csv-btn');
+    if (exportCsvBtn) {
+        exportCsvBtn.addEventListener('click', () => {
+            exportToCSV();
+        });
+    }
+}
+
+// Export the currently filtered list to CSV format
+function exportToCSV() {
+    const filtered = getFilteredReleases();
+    if (filtered.length === 0) {
+        showToast('No releases available to export.', 'error');
+        return;
+    }
+    
+    // CSV headers
+    const headers = ['ID', 'Date', 'Type', 'Description', 'Link', 'Shared on X'];
+    
+    // Helper to escape CSV cell value
+    const escapeCSV = (val) => {
+        if (val === null || val === undefined) return '';
+        let str = String(val);
+        // Replace internal double quotes with two double quotes
+        str = str.replace(/"/g, '""');
+        // Wrap in quotes if it contains comma, quotes, newline, or carriage return
+        if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+            return `"${str}"`;
+        }
+        return str;
+    };
+    
+    // Build CSV content string
+    let csvContent = headers.map(h => escapeCSV(h)).join(',') + '\r\n';
+    
+    filtered.forEach(item => {
+        const row = [
+            item.id,
+            item.date,
+            item.type,
+            item.content_text,
+            item.link,
+            state.tweetedIds.has(item.id) ? 'Yes' : 'No'
+        ];
+        csvContent += row.map(cell => escapeCSV(cell)).join(',') + '\r\n';
+    });
+    
+    // Create Blob object and download trigger
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    
+    const timestamp = new Date().toISOString().slice(0, 10);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `bigquery_release_notes_${timestamp}.csv`);
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    showToast(`Exported ${filtered.length} updates to CSV!`, 'success');
 }
