@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BigQuery Release Notes Explorer & Tweeter</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Background Elements -->
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-logo">
+                <div class="logo-icon">
+                    <i data-lucide="database"></i>
+                    <div class="logo-ring"></div>
+                </div>
+                <div class="header-text">
+                    <h1>BigQuery Release Notes</h1>
+                    <p>Track updates, parse releases, and share on X</p>
+                </div>
+            </div>
+            
+            <div class="header-actions">
+                <button id="refresh-btn" class="btn btn-primary btn-glow" title="Fetch latest release notes">
+                    <i data-lucide="refresh-cw" class="icon-spin-target"></i>
+                    <span>Refresh Feed</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Dashboard Stats -->
+        <section class="stats-dashboard">
+            <div class="stat-card">
+                <div class="stat-icon icon-blue"><i data-lucide="layers"></i></div>
+                <div class="stat-details">
+                    <span class="stat-label">Total Updates</span>
+                    <h3 id="stat-total" class="stat-value">-</h3>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon icon-purple"><i data-lucide="calendar"></i></div>
+                <div class="stat-details">
+                    <span class="stat-label">Latest Release</span>
+                    <h3 id="stat-latest" class="stat-value">-</h3>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon icon-green"><i data-lucide="twitter"></i></div>
+                <div class="stat-details">
+                    <span class="stat-label">Shared on X</span>
+                    <h3 id="stat-shared" class="stat-value">-</h3>
+                </div>
+            </div>
+        </section>
+
+        <!-- Filters and Search Toolbar -->
+        <section class="toolbar">
+            <div class="search-box">
+                <i data-lucide="search" class="search-icon"></i>
+                <input type="text" id="search-input" placeholder="Search keywords, functions, or features..." autocomplete="off">
+                <button id="clear-search" class="clear-btn" style="display:none;"><i data-lucide="x"></i></button>
+            </div>
+
+            <div class="filter-group">
+                <span class="filter-label">Filter by Type:</span>
+                <div class="filter-pills" id="type-filters">
+                    <button class="filter-pill active" data-type="all">All</button>
+                    <button class="filter-pill" data-type="Feature"><span class="dot dot-feature"></span>Feature</button>
+                    <button class="filter-pill" data-type="Change"><span class="dot dot-change"></span>Change</button>
+                    <button class="filter-pill" data-type="Breaking"><span class="dot dot-breaking"></span>Breaking</button>
+                    <button class="filter-pill" data-type="Announcement"><span class="dot dot-announcement"></span>Announcement</button>
+                    <button class="filter-pill" data-type="Issue"><span class="dot dot-issue"></span>Issue</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Feed / Content Section -->
+        <main class="main-content">
+            <!-- Loading Skeleton (Shown by default) -->
+            <div id="loading-skeleton" class="skeleton-grid">
+                <!-- Skeletons will be injected here by JS, or static templates can stand in -->
+                <div class="card skeleton-card"></div>
+                <div class="card skeleton-card"></div>
+                <div class="card skeleton-card"></div>
+                <div class="card skeleton-card"></div>
+            </div>
+
+            <!-- Error State (Hidden by default) -->
+            <div id="error-state" class="state-message" style="display: none;">
+                <div class="state-icon-wrapper error-icon"><i data-lucide="alert-triangle"></i></div>
+                <h2>Oops! Something went wrong</h2>
+                <p id="error-message">We couldn't load the BigQuery release notes. Please check your connection and try again.</p>
+                <button id="retry-btn" class="btn btn-secondary mt-4">
+                    <i data-lucide="refresh-cw"></i> Retry
+                </button>
+            </div>
+
+            <!-- Empty State (Hidden by default) -->
+            <div id="empty-state" class="state-message" style="display: none;">
+                <div class="state-icon-wrapper"><i data-lucide="search-code"></i></div>
+                <h2>No matches found</h2>
+                <p>Try adjusting your keywords or filters to search for other release notes.</p>
+                <button id="reset-filters-btn" class="btn btn-secondary mt-4">Reset Filters</button>
+            </div>
+
+            <!-- Actual Updates Feed (Hidden by default while loading) -->
+            <div id="updates-feed" class="updates-grid" style="display: none;">
+                <!-- Cards will be dynamically injected here -->
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>BigQuery Release Notes Explorer &copy; 2026. Data fetched from the Google Cloud Platform feeds.</p>
+        </footer>
+    </div>
+
+    <!-- Tweet Composer Modal (Hidden by default) -->
+    <div id="tweet-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-card glass-modal">
+            <div class="modal-header">
+                <div class="modal-header-title">
+                    <div class="tweet-logo"><i data-lucide="twitter"></i></div>
+                    <h2>Draft Tweet</h2>
+                </div>
+                <button class="modal-close-btn" id="close-modal-btn"><i data-lucide="x"></i></button>
+            </div>
+            
+            <div class="modal-body">
+                <!-- Source Info Snippet -->
+                <div class="source-snippet">
+                    <div class="snippet-header">
+                        <span id="tweet-source-date" class="snippet-date">June 25, 2026</span>
+                        <span id="tweet-source-type" class="type-badge badge-feature">Feature</span>
+                    </div>
+                    <p id="tweet-source-preview" class="snippet-preview">Retrieving preview...</p>
+                </div>
+
+                <!-- Textarea for Draft -->
+                <div class="tweet-textarea-wrapper">
+                    <textarea id="tweet-textarea" rows="6" placeholder="What's happening?"></textarea>
+                    
+                    <!-- Progress and character count -->
+                    <div class="textarea-footer">
+                        <div class="char-counter-container">
+                            <svg class="progress-ring" width="24" height="24">
+                                <circle class="progress-ring-bg" stroke="#1f2937" stroke-width="2.5" fill="transparent" r="9" cx="12" cy="12"/>
+                                <circle id="progress-ring-circle" class="progress-ring-circle" stroke="#6366f1" stroke-width="2.5" fill="transparent" r="9" cx="12" cy="12"/>
+                            </svg>
+                            <span id="char-counter" class="char-counter">280</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hashtag suggestions -->
+                <div class="hashtag-helper">
+                    <span class="helper-label">Quick Hashtags:</span>
+                    <div class="hashtag-pills" id="hashtag-pills">
+                        <button class="hashtag-pill" data-tag="#BigQuery">#BigQuery</button>
+                        <button class="hashtag-pill" data-tag="#GCP">#GCP</button>
+                        <button class="hashtag-pill" data-tag="#GoogleCloud">#GoogleCloud</button>
+                        <button class="hashtag-pill" data-tag="#DataEngineering">#DataEngineering</button>
+                        <button class="hashtag-pill" data-tag="#AI">#AI</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button id="copy-tweet-btn" class="btn btn-secondary">
+                    <i data-lucide="copy"></i>
+                    <span>Copy Text</span>
+                </button>
+                <button id="post-tweet-btn" class="btn btn-primary btn-glow">
+                    <i data-lucide="external-link"></i>
+                    <span>Post to X (Twitter)</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
